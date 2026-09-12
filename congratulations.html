@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#10151c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Night Shift">
+  <title>Account Created... Wait - Night Shift</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --ink: #10151c;
+      --surface: #171f2a;
+      --surface-light: #222d3d;
+      --paper: #e8e5de;
+      --lime: #d8f37c;
+      --coral: #ff715b;
+      --blue: #87a9ff;
+      --gold: #f4d78f;
+      --line: rgba(232, 229, 222, .18);
+      --mono: 'DM Mono', monospace;
+      --display: 'Space Grotesk', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--display);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient background grid & stars */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        radial-gradient(circle at 50% 30%, rgba(216, 243, 124, .1), transparent 45%),
+        radial-gradient(circle at 75% 75%, rgba(255, 113, 91, .08), transparent 50%),
+        linear-gradient(rgba(232, 229, 222, .03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232, 229, 222, .03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: min(580px, 100%);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Celebration Badge */
+    .party-burst {
+      width: 72px;
+      height: 72px;
+      border: 2px solid var(--lime);
+      border-radius: 50%;
+      color: var(--lime);
+      display: grid;
+      place-items: center;
+      font-size: 32px;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 40px rgba(216, 243, 124, .35);
+      animation: pop 0.8s cubic-bezier(.2, .8, .2, 1) both;
+      background: rgba(216, 243, 124, .06);
+    }
+
+    .eyebrow {
+      color: var(--lime);
+      font: 11px var(--mono);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      background: var(--lime);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--lime);
+      animation: blink 1.5s infinite;
+    }
+
+    h1 {
+      font-size: clamp(32px, 6vw, 50px);
+      line-height: 1.05;
+      letter-spacing: -.04em;
+      margin: 0 0 20px;
+      font-weight: 600;
+      color: var(--paper);
+    }
+
+    h1 span {
+      display: block;
+      color: var(--lime);
+      font-size: .88em;
+      letter-spacing: -.02em;
+      margin-top: 6px;
+    }
+
+    /* Awkward Plot Twist Box */
+    .twist-card {
+      background: var(--surface);
+      border: 1px solid var(--coral);
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin: 16px 0 28px;
+      width: 100%;
+      box-shadow: 0 0 35px rgba(255, 113, 91, .2);
+      text-align: center;
+      position: relative;
+      animation: twist-arrive 1.2s cubic-bezier(.2, .8, .2, 1) 0.6s both;
+      overflow: hidden;
+    }
+
+    .twist-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), var(--coral), var(--blue));
+    }
+
+    .shrug-avatar {
+      font-size: 32px;
+      margin-bottom: 12px;
+      display: inline-block;
+      animation: wobble 2s ease-in-out infinite;
+    }
+
+    .twist-quote {
+      font-size: clamp(18px, 3.8vw, 24px);
+      font-weight: 600;
+      line-height: 1.35;
+      color: var(--gold);
+      letter-spacing: -.02em;
+      margin: 0 0 12px;
+    }
+
+    .twist-sub {
+      font: 13px/1.65 var(--mono);
+      color: rgba(232, 229, 222, .75);
+      margin: 0 0 16px;
+    }
+
+    .sys-log {
+      display: inline-block;
+      font: 11px var(--mono);
+      background: rgba(0, 0, 0, .4);
+      border: 1px dashed rgba(255, 113, 91, .4);
+      border-radius: 4px;
+      padding: 6px 14px;
+      color: var(--coral);
+      margin-bottom: 8px;
+    }
+
+    /* Countdown & Action Bar */
+    .action-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      align-items: center;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px 20px;
+      font: 12px var(--mono);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      border: 1px solid var(--lime);
+      background: var(--lime);
+      color: var(--ink);
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: all .25s ease;
+      box-shadow: 0 0 25px rgba(216, 243, 124, .25);
+    }
+
+    .btn:hover {
+      background: transparent;
+      color: var(--lime);
+      box-shadow: 0 0 35px rgba(216, 243, 124, .45);
+      transform: translateY(-2px);
+    }
+
+    .countdown-note {
+      font: 11px var(--mono);
+      color: rgba(232, 229, 222, .5);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .countdown-note strong {
+      color: var(--lime);
+      font-size: 13px;
+    }
+
+    @keyframes pop {
+      from { transform: scale(.4); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes twist-arrive {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes wobble {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: .3; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <div class="party-burst" aria-hidden="true">🎉</div>
+    <p class="eyebrow">Night Shift / Database Terminal</p>
+    <h1>Congratulations,<span>you finally created your account!</span></h1>
+
+    <!-- The Plot Twist -->
+    <div class="twist-card">
+      <div class="shrug-avatar" aria-label="Confused shrug emoji">¯\_(ツ)_/¯</div>
+      <div class="sys-log">ERR 404: USERNAME_MEMORY_LEAK</div>
+      <div class="twist-quote">
+        "But... uhh, it seems like we forgot what your username was."
+      </div>
+      <div class="twist-sub">
+        Could you repeat it for us?
+      </div>
+    </div>
+
+    <!-- Navigation & Countdown -->
+    <div class="action-row">
+      <a class="btn" id="return-btn" href="username.html">Repeat Username ↗</a>
+      <p class="countdown-note">
+        Redirecting to username builder in <strong id="timer-sec">6</strong>s...
+      </p>
+    </div>
+  </main>
+
+  <script>
+    // Audio synthesizer: plays a brief fanfare followed by an awkward wobble sound
+    const audioCtx = window.AudioContext ? new AudioContext() : null;
+    function playTone(freq, type = 'sine', duration = 0.12, gainVal = 0.08, delay = 0) {
+      if (!audioCtx) return;
+      setTimeout(() => {
+        try {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (e) { }
+      }, delay);
+    }
+
+    // Celebratory victory tones
+    playTone(523.25, 'sine', 0.14, 0.09, 100);  // C5
+    playTone(659.25, 'sine', 0.14, 0.09, 240);  // E5
+    playTone(783.99, 'sine', 0.20, 0.10, 380);  // G5
+    playTone(1046.50, 'sine', 0.40, 0.12, 540); // C6
+
+    // Awkward comic record scratch / stutter tones for the twist
+    setTimeout(() => {
+      playTone(320, 'sawtooth', 0.18, 0.08, 0);
+      playTone(240, 'sawtooth', 0.22, 0.08, 120);
+      playTone(160, 'sawtooth', 0.35, 0.10, 260);
+    }, 1100);
+
+    // Countdown and automatic redirection back to username.html
+    let secondsLeft = 6;
+    const timerSec = document.querySelector('#timer-sec');
+    const returnBtn = document.querySelector('#return-btn');
+
+    const countdown = setInterval(() => {
+      secondsLeft--;
+      if (timerSec) timerSec.textContent = secondsLeft;
+      if (returnBtn) returnBtn.textContent = `Repeat Username (${secondsLeft}s) ↗`;
+
+      if (secondsLeft <= 0) {
+        clearInterval(countdown);
+        window.location.href = 'username.html';
+      }
+    }, 1000);
+  </script>
+</body>
+
+</html>

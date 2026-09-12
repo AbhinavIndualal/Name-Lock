@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+	<meta name="theme-color" content="#10151c">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-title" content="Night Shift">
+	<title>Studio Puzzle - Night Shift</title>
+	<link rel="manifest" href="manifest.json">
+	<link rel="icon" type="image/svg+xml" href="icon.svg">
+	<link rel="apple-touch-icon" href="icon.svg">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link
+		href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+		rel="stylesheet">
+	<style>
+		:root {
+			--ink: #10151c;
+			--paper: #e8e5de;
+			--lime: #d8f37c;
+			--coral: #ff715b;
+			--blue: #87a9ff;
+			--cyan: #5ce1e6;
+			--mono: 'DM Mono', monospace;
+			--display: 'Space Grotesk', sans-serif;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		html,
+		body {
+			margin: 0;
+			min-height: 100%;
+			background: var(--ink);
+			color: var(--paper);
+		}
+
+		body {
+			font-family: var(--display);
+			overflow-x: hidden;
+		}
+
+		.game-page {
+			min-height: 100vh;
+			display: grid;
+			place-items: center;
+			padding: 24px 16px;
+			position: relative;
+			isolation: isolate;
+			overflow: hidden;
+			background: radial-gradient(circle at 50% 30%, rgba(135, 169, 255, .14), transparent 45%), var(--ink);
+		}
+
+		.game-page::before {
+			content: "";
+			position: absolute;
+			inset: -30%;
+			z-index: -1;
+			background: conic-gradient(from 90deg, transparent, rgba(216, 243, 124, .12), transparent 35%, rgba(135, 169, 255, .12), transparent);
+			animation: spin 24s linear infinite;
+		}
+
+		.game-card {
+			width: min(540px, 100%);
+			text-align: center;
+			animation: arrive .8s cubic-bezier(.22, 1, .36, 1) both;
+		}
+
+		.eyebrow {
+			margin: 0 0 12px;
+			color: var(--lime);
+			font: 11px var(--mono);
+			letter-spacing: .18em;
+			text-transform: uppercase;
+		}
+
+		.game-card h1 {
+			margin: 0;
+			font-size: clamp(40px, 8.5vw, 68px);
+			line-height: .92;
+			letter-spacing: -.04em;
+		}
+
+		.game-card h1 span {
+			display: block;
+			color: var(--lime);
+		}
+
+		.intro {
+			max-width: 440px;
+			margin: 18px auto 20px;
+			color: rgba(232, 229, 222, .7);
+			font: 11px/1.65 var(--mono);
+		}
+
+		.puzzle {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 8px;
+			width: min(420px, 100%);
+			margin: 0 auto;
+			padding: 10px;
+			border: 1px solid rgba(232, 229, 222, .18);
+			border-radius: 12px;
+			background: rgba(232, 229, 222, .035);
+			backdrop-filter: blur(8px);
+			box-shadow: 0 0 40px rgba(135, 169, 255, .08);
+			position: relative;
+		}
+
+		.tile {
+			position: relative;
+			aspect-ratio: 1;
+			border: 1px solid rgba(135, 169, 255, .24);
+			border-radius: 8px;
+			background: rgba(135, 169, 255, .05);
+			cursor: pointer;
+			padding: 0;
+			outline: none;
+			overflow: hidden;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: border-color .2s, background .2s, box-shadow .2s, transform .2s;
+			user-select: none;
+			-webkit-user-select: none;
+			touch-action: manipulation;
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		.tile:hover {
+			border-color: rgba(216, 243, 124, .65);
+			background: rgba(216, 243, 124, .06);
+			transform: scale(1.03);
+			z-index: 2;
+		}
+
+		.tile:focus-visible {
+			outline: 2px solid var(--lime);
+			outline-offset: 2px;
+		}
+
+		.tile.powered {
+			border-color: rgba(216, 243, 124, .45);
+			background: rgba(216, 243, 124, .08);
+			box-shadow: inset 0 0 16px rgba(216, 243, 124, .12);
+		}
+
+		/* Source Tile (Start) */
+		.tile.source {
+			border-color: var(--lime);
+			box-shadow: 0 0 14px rgba(216, 243, 124, .25), inset 0 0 14px rgba(216, 243, 124, .15);
+		}
+
+		/* End Point Tile (Exit) */
+		.tile.endpoint {
+			border-color: rgba(255, 113, 91, .5);
+			background: rgba(255, 113, 91, .06);
+		}
+
+		.tile.endpoint:hover {
+			border-color: var(--coral);
+			background: rgba(255, 113, 91, .12);
+		}
+
+		.tile.endpoint.activated {
+			border-color: var(--lime);
+			background: rgba(216, 243, 124, .2);
+			box-shadow: 0 0 24px rgba(216, 243, 124, .5), inset 0 0 18px rgba(216, 243, 124, .25);
+			animation: node-pulse 1.8s ease-in-out infinite;
+		}
+
+		.tile-rotator {
+			width: 100%;
+			height: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: transform .26s cubic-bezier(.34, 1.4, .64, 1);
+			pointer-events: none;
+		}
+
+		.conduit-svg {
+			width: 100%;
+			height: 100%;
+			display: block;
+			overflow: visible;
+		}
+
+		/* Conduit line styles */
+		.pipe-track {
+			stroke: rgba(135, 169, 255, .2);
+			stroke-width: 13;
+			stroke-linecap: square;
+			stroke-linejoin: round;
+			fill: none;
+		}
+
+		.pipe-core {
+			stroke: var(--blue);
+			stroke-width: 6;
+			stroke-linecap: square;
+			stroke-linejoin: round;
+			fill: none;
+			filter: drop-shadow(0 0 4px rgba(135, 169, 255, .6));
+			transition: stroke .22s, filter .22s;
+		}
+
+		.tile.powered .pipe-track {
+			stroke: rgba(216, 243, 124, .22);
+		}
+
+		.tile.powered .pipe-core {
+			stroke: var(--lime);
+			filter: drop-shadow(0 0 7px rgba(216, 243, 124, .95));
+		}
+
+		.pipe-pulse {
+			stroke: #ffffff;
+			stroke-width: 3.5;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+			stroke-dasharray: 8 16;
+			fill: none;
+			opacity: 0;
+			transition: opacity .25s;
+		}
+
+		.tile.powered .pipe-pulse {
+			opacity: .85;
+			animation: signal-stream .9s linear infinite;
+		}
+
+		/* Badges on tiles */
+		.tile-badge {
+			position: absolute;
+			z-index: 3;
+			pointer-events: none;
+		}
+
+		/* Source styling */
+		.source-emitter {
+			width: 14px;
+			height: 14px;
+			border-radius: 50%;
+			background: var(--lime);
+			box-shadow: 0 0 12px var(--lime);
+			border: 2px solid var(--ink);
+			animation: pulse 1.6s ease-in-out infinite;
+		}
+
+		.source-tag {
+			position: absolute;
+			top: 3px;
+			left: 5px;
+			font: 8px var(--mono);
+			letter-spacing: .08em;
+			color: var(--lime);
+			text-transform: uppercase;
+			pointer-events: none;
+			font-weight: 500;
+			text-shadow: 0 0 6px rgba(0, 0, 0, .8);
+		}
+
+		/* End Point styling */
+		.endpoint-target {
+			width: 18px;
+			height: 18px;
+			border: 2px dashed var(--coral);
+			border-radius: 50%;
+			display: grid;
+			place-items: center;
+			transition: all .25s;
+			box-shadow: 0 0 8px rgba(255, 113, 91, .4);
+		}
+
+		.endpoint-target::after {
+			content: "";
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--coral);
+			transition: all .25s;
+		}
+
+		.endpoint-tag {
+			position: absolute;
+			top: 3px;
+			right: 5px;
+			font: 8px var(--mono);
+			letter-spacing: .08em;
+			color: var(--coral);
+			text-transform: uppercase;
+			pointer-events: none;
+			font-weight: 500;
+			text-shadow: 0 0 6px rgba(0, 0, 0, .8);
+			transition: color .25s;
+		}
+
+		.tile.endpoint.activated .endpoint-target {
+			border: 2px solid var(--lime);
+			box-shadow: 0 0 12px var(--lime);
+			animation: spin 5s linear infinite;
+		}
+
+		.tile.endpoint.activated .endpoint-target::after {
+			background: var(--lime);
+			box-shadow: 0 0 10px var(--lime);
+		}
+
+		.tile.endpoint.activated .endpoint-tag {
+			color: var(--lime);
+		}
+
+		/* Legend & info pills */
+		.legend {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 8px;
+			margin: 16px auto 10px;
+			max-width: 440px;
+		}
+
+		.legend-pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 5px 12px;
+			border-radius: 20px;
+			border: 1px solid rgba(232, 229, 222, .15);
+			background: rgba(232, 229, 222, .03);
+			font: 11px var(--mono);
+			color: rgba(232, 229, 222, .75);
+		}
+
+		.legend-icon {
+			width: 14px;
+			height: 14px;
+			stroke: var(--blue);
+			stroke-width: 2.5;
+			fill: none;
+		}
+
+		.instructions {
+			margin: 6px 0 16px;
+			color: rgba(232, 229, 222, .55);
+			font: 10px var(--mono);
+		}
+
+		.game-status {
+			min-height: 20px;
+			margin: 12px 0 0;
+			color: rgba(232, 229, 222, .75);
+			font: 11px var(--mono);
+			letter-spacing: .02em;
+		}
+
+		.game-status.success {
+			color: var(--lime);
+			font-weight: 500;
+			text-shadow: 0 0 12px rgba(216, 243, 124, .45);
+		}
+
+		.controls {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			align-items: center;
+			gap: 8px;
+			margin-top: 18px;
+		}
+
+		.btn,
+		.feature-link {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			padding: 10px 16px;
+			border: 1px solid rgba(232, 229, 222, .28);
+			border-radius: 6px;
+			background: transparent;
+			color: var(--paper);
+			font: 11px var(--mono);
+			letter-spacing: .04em;
+			text-decoration: none;
+			cursor: pointer;
+			transition: border-color .2s, color .2s, transform .2s, background .2s, box-shadow .2s;
+		}
+
+		.btn:hover,
+		.feature-link:hover {
+			border-color: var(--lime);
+			color: var(--lime);
+			transform: translateY(-2px);
+			box-shadow: 0 4px 16px rgba(216, 243, 124, .12);
+		}
+
+		.btn-primary {
+			border-color: var(--lime);
+			background: rgba(216, 243, 124, .1);
+			color: var(--lime);
+		}
+
+		.btn-primary:hover {
+			background: var(--lime);
+			color: var(--ink);
+		}
+
+		.feature-link {
+			border-color: var(--lime);
+			background: var(--lime);
+			color: var(--ink);
+			font-weight: 600;
+			box-shadow: 0 0 24px rgba(216, 243, 124, .35);
+			animation: arrive .4s ease-out both;
+		}
+
+		.feature-link:hover {
+			background: transparent;
+			color: var(--lime);
+		}
+
+		.btn:disabled {
+			opacity: 0.35;
+			cursor: not-allowed;
+			pointer-events: none;
+			transform: none;
+			box-shadow: none;
+		}
+
+		.puzzle.completed {
+			pointer-events: none;
+		}
+
+		.puzzle.completed .tile {
+			cursor: default;
+		}
+
+		.hidden {
+			display: none !important;
+		}
+
+		@keyframes spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+
+		@keyframes arrive {
+			from {
+				opacity: 0;
+				transform: translateY(18px) scale(.98);
+			}
+
+			to {
+				opacity: 1;
+				transform: none;
+			}
+		}
+
+		@keyframes pulse {
+			0%, 100% {
+				transform: scale(1);
+				box-shadow: 0 0 8px var(--lime);
+			}
+			50% {
+				transform: scale(1.22);
+				box-shadow: 0 0 18px var(--lime);
+			}
+		}
+
+		@keyframes node-pulse {
+			0%, 100% {
+				box-shadow: 0 0 16px rgba(216, 243, 124, .35), inset 0 0 14px rgba(216, 243, 124, .15);
+			}
+			50% {
+				box-shadow: 0 0 26px rgba(216, 243, 124, .6), inset 0 0 22px rgba(216, 243, 124, .3);
+			}
+		}
+
+		@keyframes signal-stream {
+			to {
+				stroke-dashoffset: -24;
+			}
+		}
+
+		@keyframes solve-glow {
+			0%, 100% {
+				box-shadow: 0 0 40px rgba(216, 243, 124, .15);
+			}
+			50% {
+				box-shadow: 0 0 60px rgba(216, 243, 124, .45);
+			}
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.game-page::before,
+			.game-card,
+			.tile,
+			.tile-rotator,
+			.pipe-pulse,
+			.source-emitter,
+			.endpoint-target,
+			.tile.endpoint.activated {
+				animation: none !important;
+				transition: none !important;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<main class="game-page">
+		<section class="game-card" aria-labelledby="game-title">
+			<p class="eyebrow">Studio feature trial / 01</p>
+			<h1 id="game-title">Route the<span>signal.</span></h1>
+			<p class="intro">Connect conduits from the Source (top-left) to the End Point (bottom-right). Rotate the straight and two-way lines to complete the circuit and move on.</p>
+
+			<div class="legend" aria-label="Conduit line types">
+				<div class="legend-pill" title="Straight Line: traverses opposite sides">
+					<svg class="legend-icon" viewBox="0 0 24 24"><line x1="2" y1="12" x2="22" y2="12" stroke-linecap="round"/></svg>
+					<span>Straight Line</span>
+				</div>
+				<div class="legend-pill" title="Two-Way Line: 90° corner bend">
+					<svg class="legend-icon" viewBox="0 0 24 24"><polyline points="12,2 12,12 22,12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					<span>Two-Way (Corner)</span>
+				</div>
+			</div>
+			<p class="instructions">Click to rotate 90° (all 4 directions) · Right-click or double-click to toggle line type</p>
+
+			<div class="puzzle" id="puzzle" role="group" aria-label="Signal routing puzzle board"></div>
+
+			<p class="game-status" id="game-status" aria-live="polite">Click any tile to rotate it.</p>
+
+			<div class="controls">
+				<button class="btn" id="reset-btn" type="button" title="Reset current board to initial scrambled rotation">Reset puzzle</button>
+				<button class="btn btn-primary" id="reshuffle-btn" type="button" title="Generate a fresh board layout with shuffled line types">Reshuffle board</button>
+				<button class="btn" id="solve-hint-btn" type="button" title="Align conduits to the valid solution path">Auto-route hint</button>
+				<a class="feature-link hidden" id="feature-link" href="quiz.html">Continue to quiz ↗</a>
+			</div>
+		</section>
+	</main>
+
+	<script>
+		// Grid configuration
+		const GRID_SIZE = 4;
+		const TOTAL_TILES = 16;
+		const SOURCE_INDEX = 0;   // Top-left
+		const END_POINT_INDEX = 15; // Bottom-right
+
+		// Direction vectors [dr, dc, oppIndex, name]
+		// 0: North, 1: East, 2: South, 3: West
+		const DIRS = [
+			{ dr: -1, dc: 0, opp: 2, name: 'N' },
+			{ dr: 0, dc: 1, opp: 3, name: 'E' },
+			{ dr: 1, dc: 0, opp: 0, name: 'S' },
+			{ dr: 0, dc: -1, opp: 1, name: 'W' }
+		];
+
+		// Two conduit tile definitions (3-way removed):
+		// - 'straight': West <-> East
+		// - 'two-way': North <-> East (90-degree corner bend)
+		const TILE_TYPES = ['straight', 'two-way'];
+		const TILE_DEFS = {
+			'straight': {
+				basePorts: [1, 3], // East, West
+				svgPath: 'M 0,50 L 100,50'
+			},
+			'two-way': {
+				basePorts: [0, 1], // North, East
+				svgPath: 'M 50,0 L 50,50 L 100,50'
+			}
+		};
+
+		// Helper: compute open ports for a tile given its type and effective rotation (0..3)
+		function getPorts(type, rot) {
+			const effectiveRot = ((rot % 4) + 4) % 4;
+			return TILE_DEFS[type].basePorts.map(p => (p + effectiveRot) % 4);
+		}
+
+		// DOM Elements
+		const puzzleEl = document.querySelector('#puzzle');
+		const statusEl = document.querySelector('#game-status');
+		const resetBtn = document.querySelector('#reset-btn');
+		const reshuffleBtn = document.querySelector('#reshuffle-btn');
+		const solveHintBtn = document.querySelector('#solve-hint-btn');
+		const featureLink = document.querySelector('#feature-link');
+
+		// State
+		let board = []; // Array of { type, rotSteps, solvedRot, initialRotSteps }
+		let gameEnded = false;
+		let victoryTimer = null;
+
+		// Audio synthesizer for victory chime
+		const audioCtx = window.AudioContext ? new AudioContext() : null;
+		function playTone(freq, type = 'sine', duration = 0.12, gainVal = 0.08) {
+			if (!audioCtx) return;
+			if (audioCtx.state === 'suspended') audioCtx.resume();
+			try {
+				const osc = audioCtx.createOscillator();
+				const gain = audioCtx.createGain();
+				osc.type = type;
+				osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+				gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+				gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+				osc.connect(gain);
+				gain.connect(audioCtx.destination);
+				osc.start();
+				osc.stop(audioCtx.currentTime + duration);
+			} catch (e) { }
+		}
+
+		function playVictoryChime() {
+			playTone(523.25, 'sine', 0.15, 0.1);
+			setTimeout(() => playTone(659.25, 'sine', 0.15, 0.1), 120);
+			setTimeout(() => playTone(783.99, 'sine', 0.15, 0.1), 240);
+			setTimeout(() => playTone(1046.50, 'sine', 0.45, 0.15), 360);
+		}
+
+		// Guaranteed solvable board generator using only straight and two-way lines
+		function generateSolvableBoard() {
+			let path = null;
+			let attempts = 0;
+
+			// Generate a random self-avoiding walk from SOURCE (0) to END_POINT (15)
+			while (!path && attempts < 200) {
+				attempts++;
+				const p = [SOURCE_INDEX];
+				const visited = new Set([SOURCE_INDEX]);
+				let curr = SOURCE_INDEX;
+
+				while (curr !== END_POINT_INDEX) {
+					const r = Math.floor(curr / GRID_SIZE);
+					const c = curr % GRID_SIZE;
+					const nbrs = [];
+
+					DIRS.forEach((d, dIdx) => {
+						const nr = r + d.dr, nc = c + d.dc;
+						if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+							const v = nr * GRID_SIZE + nc;
+							if (!visited.has(v)) nbrs.push({ v, dIdx, opp: d.opp });
+						}
+					});
+
+					if (nbrs.length === 0) break; // Dead end, retry
+					const chosen = nbrs[Math.floor(Math.random() * nbrs.length)];
+					visited.add(chosen.v);
+					p.push(chosen.v);
+					curr = chosen.v;
+				}
+
+				if (curr === END_POINT_INDEX && p.length >= 6) {
+					path = p;
+				}
+			}
+
+			// Fallback path if random walk took too long
+			if (!path) {
+				path = [0, 1, 2, 3, 7, 11, 15];
+			}
+
+			// Required directions for each tile on the path
+			const nodeReqDirs = Array.from({ length: TOTAL_TILES }, () => new Set());
+			for (let i = 0; i < path.length - 1; i++) {
+				const u = path[i], v = path[i + 1];
+				const r1 = Math.floor(u / GRID_SIZE), c1 = u % GRID_SIZE;
+				const r2 = Math.floor(v / GRID_SIZE), c2 = v % GRID_SIZE;
+
+				DIRS.forEach((d, dIdx) => {
+					if (r1 + d.dr === r2 && c1 + d.dc === c2) {
+						nodeReqDirs[u].add(dIdx);
+						nodeReqDirs[v].add(d.opp);
+					}
+				});
+			}
+
+			// Assign tile types (straight or two-way) and solved rotations
+			const tiles = [];
+			const counts = { 'straight': 0, 'two-way': 0 };
+
+			for (let i = 0; i < TOTAL_TILES; i++) {
+				const req = nodeReqDirs[i];
+				const options = [];
+
+				TILE_TYPES.forEach(type => {
+					for (let rot = 0; rot < 4; rot++) {
+						const ports = new Set(getPorts(type, rot));
+						let satisfies = true;
+						for (const reqDir of req) {
+							if (!ports.has(reqDir)) { satisfies = false; break; }
+						}
+						if (satisfies) options.push({ type, rot });
+					}
+				});
+
+				// Shuffle options and balance types across board
+				options.sort(() => Math.random() - 0.5);
+				options.sort((a, b) => counts[a.type] - counts[b.type]);
+
+				const chosen = options[0];
+				counts[chosen.type]++;
+
+				// Scramble initial rotation (1, 2, or 3 clockwise turns)
+				const scrambleOffset = 1 + Math.floor(Math.random() * 3);
+				const initialRotSteps = chosen.rot + scrambleOffset;
+
+				tiles.push({
+					type: chosen.type,
+					rotSteps: initialRotSteps,
+					solvedRot: chosen.rot,
+					initialRotSteps: initialRotSteps
+				});
+			}
+
+			return tiles;
+		}
+
+		// Calculate real-time signal propagation starting from Source (tile 0)
+		function evaluateSignal() {
+			const powered = new Set();
+			powered.add(SOURCE_INDEX);
+			const queue = [SOURCE_INDEX];
+
+			while (queue.length > 0) {
+				const u = queue.shift();
+				const r = Math.floor(u / GRID_SIZE);
+				const c = u % GRID_SIZE;
+				const portsU = getPorts(board[u].type, board[u].rotSteps);
+
+				DIRS.forEach((dir, dIdx) => {
+					if (!portsU.includes(dIdx)) return;
+					const nr = r + dir.dr;
+					const nc = c + dir.dc;
+
+					if (nr >= 0 && nr < GRID_SIZE && nc >= 0 && nc < GRID_SIZE) {
+						const v = nr * GRID_SIZE + nc;
+						const portsV = getPorts(board[v].type, board[v].rotSteps);
+						if (portsV.includes(dir.opp)) {
+							if (!powered.has(v)) {
+								powered.add(v);
+								queue.push(v);
+							}
+						}
+					}
+				});
+			}
+
+			return powered;
+		}
+
+		// Render board to DOM
+		function render() {
+			const poweredTiles = evaluateSignal();
+			puzzleEl.innerHTML = '';
+
+			board.forEach((tile, index) => {
+				const button = document.createElement('button');
+				button.type = 'button';
+				button.className = 'tile';
+				button.dataset.index = index;
+				button.dataset.type = tile.type;
+				button.dataset.rotation = tile.rotSteps % 4;
+
+				const isSource = (index === SOURCE_INDEX);
+				const isEndPoint = (index === END_POINT_INDEX);
+				const isPowered = poweredTiles.has(index);
+				const isEndActive = isEndPoint && isPowered;
+
+				if (isSource) button.classList.add('source');
+				if (isEndPoint) button.classList.add('endpoint');
+				if (isPowered) button.classList.add('powered');
+				if (isEndActive) button.classList.add('activated');
+
+				// Accessible label
+				const typeLabel = tile.type === 'straight' ? 'Straight Line' : 'Two-Way Corner';
+				const rotLabel = `${(tile.rotSteps % 4) * 90}°`;
+				const statusLabel = isEndActive ? 'End Point Reached' : (isPowered ? 'Signal Connected' : 'No Signal');
+				button.setAttribute('aria-label', `Tile ${index + 1}: ${typeLabel}, rotated ${rotLabel}. ${statusLabel}. Click to rotate, double-click to toggle type.`);
+
+				// Inner rotating container
+				const rotator = document.createElement('div');
+				rotator.className = 'tile-rotator';
+				rotator.style.transform = `rotate(${tile.rotSteps * 90}deg)`;
+
+				// Vector SVG Conduit
+				const svgDef = TILE_DEFS[tile.type];
+				rotator.innerHTML = `
+					<svg class="conduit-svg" viewBox="0 0 100 100" aria-hidden="true">
+						<path class="pipe-track" d="${svgDef.svgPath}" />
+						<path class="pipe-core" d="${svgDef.svgPath}" />
+						<path class="pipe-pulse" d="${svgDef.svgPath}" />
+					</svg>
+				`;
+
+				button.appendChild(rotator);
+
+				// Source Badge (Start)
+				if (isSource) {
+					const tag = document.createElement('span');
+					tag.className = 'source-tag';
+					tag.textContent = 'PWR';
+					button.appendChild(tag);
+
+					const emitter = document.createElement('div');
+					emitter.className = 'tile-badge source-emitter';
+					button.appendChild(emitter);
+				}
+
+				// End Point Badge (Terminal)
+				if (isEndPoint) {
+					const tag = document.createElement('span');
+					tag.className = 'endpoint-tag';
+					tag.textContent = 'END';
+					button.appendChild(tag);
+
+					const target = document.createElement('div');
+					target.className = 'tile-badge endpoint-target';
+					target.title = 'End Point Terminal';
+					button.appendChild(target);
+				}
+
+				if (gameEnded) {
+					button.disabled = true;
+				}
+
+				// Click: Rotate 90° clockwise (all 4 directions)
+				button.addEventListener('click', (e) => {
+					e.preventDefault();
+					if (gameEnded) return;
+					tile.rotSteps += 1;
+					render();
+				});
+
+				// Right-Click (contextmenu): Toggle line type between straight and two-way
+				button.addEventListener('contextmenu', (e) => {
+					e.preventDefault();
+					if (gameEnded) return;
+					toggleTileType(index);
+				});
+
+				// Double-Click: Also toggle line type for touch/mobile convenience
+				button.addEventListener('dblclick', (e) => {
+					e.preventDefault();
+					if (gameEnded) return;
+					toggleTileType(index);
+				});
+
+				puzzleEl.appendChild(button);
+			});
+
+			checkVictory(poweredTiles);
+		}
+
+		// Toggle tile type between straight <-> two-way
+		function toggleTileType(index) {
+			if (gameEnded) return;
+			board[index].type = (board[index].type === 'straight') ? 'two-way' : 'straight';
+			render();
+		}
+
+		// Check if end point is powered
+		function checkVictory(poweredTiles) {
+			const endReached = poweredTiles.has(END_POINT_INDEX);
+
+			if (endReached) {
+				if (gameEnded) return;
+				gameEnded = true;
+
+				statusEl.textContent = '⚡ Signal connected to End Point! Advancing to quiz...';
+				statusEl.classList.add('success');
+				puzzleEl.classList.add('completed');
+				puzzleEl.style.animation = 'solve-glow 1.5s ease-in-out infinite';
+
+				// Disable controls as the game has ended
+				resetBtn.disabled = true;
+				reshuffleBtn.disabled = true;
+				solveHintBtn.disabled = true;
+
+				// Play victory chime
+				playVictoryChime();
+
+				// Reveal continue link and countdown to next page
+				featureLink.classList.remove('hidden');
+				let seconds = 2;
+				featureLink.textContent = `Continue to quiz (${seconds}s) ↗`;
+
+				const targetPage = featureLink.getAttribute('href') || 'quiz.html';
+				victoryTimer = setInterval(() => {
+					seconds--;
+					if (seconds > 0) {
+						featureLink.textContent = `Continue to quiz (${seconds}s) ↗`;
+					} else {
+						clearInterval(victoryTimer);
+						window.location.href = targetPage;
+					}
+				}, 1000);
+			} else {
+				statusEl.textContent = 'Route signal from Source (top-left) to End Point (bottom-right). Click tiles to rotate.';
+				statusEl.classList.remove('success');
+				featureLink.classList.add('hidden');
+				puzzleEl.style.animation = '';
+			}
+		}
+
+		// Reset to current board's initial scrambled state
+		function resetBoard() {
+			if (gameEnded) return;
+			board.forEach(tile => {
+				tile.rotSteps = tile.initialRotSteps;
+			});
+			render();
+		}
+
+		// Reshuffle whole board: new solvable path & fresh scrambled layout
+		function reshuffleBoard() {
+			if (gameEnded) return;
+			board = generateSolvableBoard();
+			render();
+		}
+
+		// Auto-route hint: align all tiles to their solved rotations
+		function showSolutionHint() {
+			if (gameEnded) return;
+			board.forEach(tile => {
+				const currentEffective = ((tile.rotSteps % 4) + 4) % 4;
+				const diff = (tile.solvedRot - currentEffective + 4) % 4;
+				tile.rotSteps += diff;
+			});
+			render();
+		}
+
+		// Event Listeners
+		resetBtn.addEventListener('click', resetBoard);
+		reshuffleBtn.addEventListener('click', reshuffleBoard);
+		solveHintBtn.addEventListener('click', showSolutionHint);
+		featureLink.addEventListener('click', () => {
+			if (victoryTimer) clearInterval(victoryTimer);
+		});
+
+		// Initialize
+		reshuffleBoard();
+	</script>
+</body>
+
+</html>

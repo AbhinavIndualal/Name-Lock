@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+	<meta name="theme-color" content="#10151c">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-title" content="Night Shift">
+	<title>Create your username - Night Shift</title>
+	<link rel="manifest" href="manifest.json">
+	<link rel="icon" type="image/svg+xml" href="icon.svg">
+	<link rel="apple-touch-icon" href="icon.svg">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link
+		href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+		rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="handle.css">
+	<style>
+		.captcha-input {
+			width: 92px;
+			margin-left: 6px;
+			background: transparent;
+			border: 0;
+			border-bottom: 1px solid rgba(216, 243, 124, .55);
+			outline: 0;
+			color: var(--paper);
+			font: 10px var(--mono);
+			padding: 3px
+		}
+
+		.captcha-code-image {
+			display: inline-block;
+			width: 120px;
+			height: 30px;
+			vertical-align: middle;
+			margin: 4px 3px;
+			object-fit: cover
+		}
+
+		.image-captcha {
+			font-size: 10px
+		}
+
+		.captcha-grid {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 4px;
+			margin-top: 6px
+		}
+
+		.captcha-tile {
+			position: relative;
+			aspect-ratio: 1;
+			border: 1px solid rgba(232, 229, 222, .2);
+			padding: 0;
+			background-color: rgba(232, 229, 222, .04);
+			background-size: cover;
+			background-repeat: no-repeat;
+			background-position: center;
+			color: var(--paper);
+			font: 9px var(--mono);
+			cursor: pointer;
+			overflow: hidden;
+			transition: border-color .2s, transform .2s, box-shadow .2s
+		}
+
+		.captcha-tile:hover {
+			border-color: var(--paper);
+			transform: translateY(-2px)
+		}
+
+		.captcha-cell-0 {
+			background-image: url("cell_0.jpg")
+		}
+
+		.captcha-cell-1 {
+			background-image: url("cell_1.jpg")
+		}
+
+		.captcha-cell-2 {
+			background-image: url("cell_2.jpg")
+		}
+
+		.captcha-cell-3 {
+			background-image: url("cell_3.jpg")
+		}
+
+		.captcha-cell-4 {
+			background-image: url("cell_4.jpg")
+		}
+
+		.captcha-cell-5 {
+			background-image: url("cell_5.jpg")
+		}
+
+		.captcha-cell-6 {
+			background-image: url("cell_6.jpg")
+		}
+
+		.captcha-cell-7 {
+			background-image: url("cell_7.jpg")
+		}
+
+		.captcha-cell-8 {
+			background-image: url("cell_8.jpg")
+		}
+
+		.captcha-cell-9 {
+			background-image: url("cell_9.jpg")
+		}
+
+		.captcha-cell-10 {
+			background-image: url("cell_10.jpg")
+		}
+
+		.captcha-cell-11 {
+			background-image: url("cell_11.jpg")
+		}
+
+		.captcha-cell-12 {
+			background-image: url("cell_12.jpg")
+		}
+
+		.captcha-cell-13 {
+			background-image: url("cell_13.jpg")
+		}
+
+		.captcha-cell-14 {
+			background-image: url("cell_14.jpg")
+		}
+
+		.captcha-cell-15 {
+			background-image: url("cell_15.jpg")
+		}
+
+		.captcha-tile[aria-pressed="true"] {
+			border-color: var(--lime);
+			background-color: rgba(216, 243, 124, .18);
+			box-shadow: inset 0 0 0 2px var(--lime), 0 0 12px rgba(216, 243, 124, .2)
+		}
+
+		.captcha-tile.selected::after {
+			content: "✓";
+			position: absolute;
+			right: 4px;
+			top: 4px;
+			width: 18px;
+			height: 18px;
+			display: grid;
+			place-items: center;
+			border-radius: 50%;
+			background: var(--lime);
+			color: var(--ink);
+			font: 12px var(--mono);
+			font-weight: 500
+		}
+
+		.captcha-continue {
+			width: 100%;
+			margin-top: 8px;
+			border: 1px solid var(--lime);
+			background: var(--lime);
+			color: var(--ink);
+			padding: 9px;
+			font: 10px var(--mono);
+			text-transform: uppercase;
+			cursor: pointer;
+			transition: background .2s, color .2s, transform .2s
+		}
+
+		.captcha-continue:hover:not(:disabled) {
+			background: transparent;
+			color: var(--lime);
+			transform: translateY(-2px)
+		}
+
+		.captcha-continue:disabled {
+			cursor: not-allowed;
+			opacity: .35
+		}
+
+		.image-captcha[data-error]:not([data-error=""])::after {
+			content: attr(data-error);
+			display: block;
+			color: var(--coral);
+			margin-top: 5px
+		}
+
+		.username-page {
+			position: relative;
+			isolation: isolate;
+			overflow: hidden;
+			background: radial-gradient(circle at 50% 50%, rgba(135, 169, 255, .08), transparent 42%), var(--ink)
+		}
+
+		.username-page::before {
+			content: "";
+			position: absolute;
+			width: 420px;
+			height: 420px;
+			border: 1px solid rgba(216, 243, 124, .2);
+			border-radius: 50%;
+			left: 50%;
+			top: 50%;
+			z-index: 0;
+			transform: translate(-50%, -50%);
+			animation: orbit-pulse 8s ease-in-out infinite
+		}
+
+		.username-page::after {
+			content: "";
+			position: absolute;
+			inset: 15%;
+			z-index: 0;
+			background: radial-gradient(circle, rgba(135, 169, 255, .12), transparent 62%);
+			animation: ambient-breathe 6s ease-in-out infinite
+		}
+
+		.username-tool {
+			position: relative;
+			z-index: 1;
+			animation: page-rise .8s cubic-bezier(.22, 1, .36, 1) both
+		}
+
+		.username-tool h1 {
+			animation: title-reveal .9s cubic-bezier(.22, 1, .36, 1) .08s both
+		}
+
+		.username-intro {
+			animation: fade-up .65s ease-out .24s both
+		}
+
+		.handle-lab {
+			animation: fade-up .65s ease-out .38s both
+		}
+
+		.handle-result strong {
+			display: inline-block;
+			animation: result-glow 2.8s ease-in-out infinite
+		}
+
+		@keyframes page-rise {
+			from {
+				opacity: 1;
+				transform: translateY(24px) scale(.98)
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1)
+			}
+		}
+
+		@keyframes title-reveal {
+			from {
+				opacity: 1;
+				letter-spacing: .12em;
+				filter: blur(4px);
+				transform: translateY(12px)
+			}
+
+			to {
+				opacity: 1;
+				letter-spacing: 0;
+				filter: blur(0);
+				transform: translateY(0)
+			}
+		}
+
+		@keyframes fade-up {
+			from {
+				opacity: 1;
+				transform: translateY(10px)
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0)
+			}
+		}
+
+		@keyframes orbit-pulse {
+
+			0%,
+			100% {
+				opacity: .25;
+				transform: translate(-50%, -50%) scale(.94)
+			}
+
+			50% {
+				opacity: .65;
+				transform: translate(-50%, -50%) scale(1.05)
+			}
+		}
+
+		@keyframes ambient-breathe {
+
+			0%,
+			100% {
+				opacity: .45;
+				transform: scale(.92)
+			}
+
+			50% {
+				opacity: 1;
+				transform: scale(1.04)
+			}
+		}
+
+		@keyframes result-glow {
+
+			0%,
+			100% {
+				text-shadow: 0 0 0 rgba(216, 243, 124, 0)
+			}
+
+			50% {
+				text-shadow: 0 0 14px rgba(216, 243, 124, .5)
+			}
+		}
+
+		@media(prefers-reduced-motion:reduce) {
+
+			.username-tool,
+			.username-tool h1,
+			.username-intro,
+			.handle-lab,
+			.handle-result strong,
+			.username-page::before,
+			.username-page::after {
+				animation: none
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<main class="username-page">
+		<section class="username-tool" aria-labelledby="username-title">
+			<h1 id="username-title">Create your username</h1>
+			<p class="username-intro">Build a username that is ready for the night.</p>
+			<div class="handle-lab" aria-label="Username formatter">
+				<label for="name-input">All it takes is 10 seconds to create a username, just create one!!</label>
+				<div class="handle-input-wrap"><span>@</span><input id="name-input" type="text"
+						placeholder="type your name" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" minlength="8" maxlength="20" required
+						aria-describedby="username-requirements"><button id="copy-handle" type="button"
+						aria-label="Copy formatted username">↗</button></div>
+				<p class="handle-result" aria-live="polite">Your handle: <strong id="handle-output">night-shift</strong>
+				</p>
+				<div class="handle-requirements" id="username-requirements" aria-live="polite">
+					<p data-requirement="min-length">Username must be at least 8 characters.</p>
+					<p data-requirement="max-length">Username must not be over 20 characters.</p>
+					<p data-requirement="uppercase">Username must contain Uppercase letter.</p>
+					<p data-requirement="lowercase">Username must contain lowercase letter.</p>
+					<p data-requirement="number">Username must contain a number.</p>
+					<p data-requirement="special">Username must contain a special character.</p>
+					<p data-requirement="mountain">Include the Tallest mountain.</p>
+					<p data-requirement="ocean">Include the largest ocean.</p>
+				</div>
+			</div>
+		</section>
+	</main>
+	<script src="script.js"></script>
+</body>
+
+</html>

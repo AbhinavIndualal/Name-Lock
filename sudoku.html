@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#10151c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Night Shift">
+  <title>Sudoku - Night Shift</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --ink: #10151c;
+      --surface: #171f2a;
+      --surface-light: #222d3d;
+      --paper: #e8e5de;
+      --lime: #d8f37c;
+      --coral: #ff715b;
+      --blue: #87a9ff;
+      --gold: #f4d78f;
+      --line: rgba(232, 229, 222, .18);
+      --mono: 'DM Mono', monospace;
+      --display: 'Space Grotesk', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--display);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 32px 16px 60px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Ambient background grid & glow */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        radial-gradient(circle at 50% 15%, rgba(135, 169, 255, .08), transparent 45%),
+        radial-gradient(circle at 80% 85%, rgba(216, 243, 124, .06), transparent 50%),
+        linear-gradient(rgba(232, 229, 222, .03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232, 229, 222, .03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: min(460px, 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* Header */
+    .eyebrow {
+      color: var(--lime);
+      font: 11px var(--mono);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      background: var(--lime);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--lime);
+      animation: pulse 2s infinite;
+    }
+
+    h1 {
+      font-size: clamp(34px, 6vw, 56px);
+      line-height: .92;
+      letter-spacing: -.05em;
+      margin: 0 0 14px;
+      font-weight: 600;
+    }
+
+    h1 span {
+      display: block;
+      color: var(--lime);
+      font-size: .88em;
+      letter-spacing: -.03em;
+      margin-top: 4px;
+    }
+
+    .intro {
+      font: 12px/1.65 var(--mono);
+      color: rgba(232, 229, 222, .65);
+      max-width: 420px;
+      margin: 0 auto 24px;
+    }
+
+    /* Main Game Layout */
+    .puzzle-layout {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    /* Sudoku Board */
+    .board-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .sudoku-board {
+      display: grid;
+      grid-template-columns: repeat(9, 44px);
+      grid-template-rows: repeat(9, 44px);
+      border: 3px solid var(--paper);
+      box-shadow: 0 0 45px rgba(0, 0, 0, .6), 0 0 30px rgba(135, 169, 255, .15);
+      background: var(--surface);
+      user-select: none;
+    }
+
+    @media (max-width: 500px) {
+      .sudoku-board {
+        grid-template-columns: repeat(9, 36px);
+        grid-template-rows: repeat(9, 36px);
+      }
+    }
+
+    @media (max-width: 380px) {
+      .sudoku-board {
+        grid-template-columns: repeat(9, 32px);
+        grid-template-rows: repeat(9, 32px);
+      }
+    }
+
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: 18px var(--mono);
+      font-weight: 500;
+      color: var(--paper);
+      border: 1px solid rgba(232, 229, 222, .14);
+      background: transparent;
+      transition: background-color .15s, transform .15s, box-shadow .15s;
+      cursor: default;
+      position: relative;
+    }
+
+    /* 3x3 Block Thicker Borders */
+    .cell:nth-child(3n) {
+      border-right: 2px solid var(--paper);
+    }
+
+    .cell:nth-child(9n) {
+      border-right: none;
+    }
+
+    .cell[data-row="2"],
+    .cell[data-row="5"] {
+      border-bottom: 2px solid var(--paper);
+    }
+
+    /* Highlighting peer cells */
+    .cell.peer-highlight {
+      background: rgba(135, 169, 255, .08);
+    }
+
+    .cell.same-digit-highlight {
+      background: rgba(244, 215, 143, .16);
+      color: var(--gold);
+    }
+
+    .cell.selected {
+      background: rgba(135, 169, 255, .28) !important;
+      outline: 2px solid var(--blue);
+      outline-offset: -2px;
+      z-index: 3;
+    }
+
+    /* Target Keystone Cells */
+    .cell.keystone {
+      cursor: pointer;
+      background: rgba(244, 215, 143, .07);
+      color: var(--gold);
+      font-weight: 600;
+      position: relative;
+    }
+
+    .cell.keystone::before {
+      content: "";
+      position: absolute;
+      inset: 2px;
+      border: 1px dashed rgba(244, 215, 143, .45);
+      border-radius: 2px;
+      pointer-events: none;
+      animation: keystone-pulse 3s infinite;
+    }
+
+    .cell.keystone.step-solved {
+      background: rgba(216, 243, 124, .18);
+      color: var(--lime);
+      box-shadow: inset 0 0 12px rgba(216, 243, 124, .25);
+    }
+
+    .cell.keystone.step-solved::before {
+      border: 1px solid var(--lime);
+      animation: none;
+    }
+
+    .cell.keystone.error {
+      background: rgba(255, 113, 91, .25);
+      color: var(--coral);
+      animation: cell-shake .4s ease-in-out;
+    }
+
+    @keyframes keystone-pulse {
+      0%, 100% { opacity: .4; }
+      50% { opacity: .9; }
+    }
+
+    @keyframes cell-shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-4px); }
+      40% { transform: translateX(4px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(3px); }
+    }
+
+    /* Controls and Number Pad */
+    .numpad-wrap {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .numpad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      width: 100%;
+    }
+
+    .num-btn {
+      padding: 12px 6px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--paper);
+      font: 16px var(--mono);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .num-btn:hover {
+      background: var(--surface-light);
+      border-color: var(--lime);
+      color: var(--lime);
+      transform: translateY(-2px);
+    }
+
+    .num-btn.clear-btn {
+      grid-column: span 1;
+      color: var(--coral);
+      border-color: rgba(255, 113, 91, .3);
+    }
+
+    .num-btn.clear-btn:hover {
+      background: rgba(255, 113, 91, .15);
+      border-color: var(--coral);
+      color: var(--coral);
+    }
+    .action-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 11px 14px;
+      font: 11px var(--mono);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--paper);
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: all .2s;
+    }
+
+    .btn:hover {
+      border-color: var(--lime);
+      color: var(--lime);
+      background: rgba(216, 243, 124, .06);
+    }
+
+    .btn.primary {
+      background: var(--lime);
+      color: var(--ink);
+      border-color: var(--lime);
+      font-weight: 600;
+    }
+
+    .btn.primary:hover {
+      background: transparent;
+      color: var(--lime);
+      box-shadow: 0 0 20px rgba(216, 243, 124, .2);
+    }
+
+    /* Modal / Victory Overlay */
+    .victory-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 21, 28, .88);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .4s ease;
+    }
+
+    .victory-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .victory-card {
+      background: var(--surface);
+      border: 1px solid var(--lime);
+      box-shadow: 0 0 60px rgba(216, 243, 124, .25);
+      border-radius: 8px;
+      padding: 40px 32px;
+      max-width: 440px;
+      width: calc(100% - 32px);
+      text-align: center;
+      transform: scale(.94);
+      transition: transform .4s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .victory-overlay.show .victory-card {
+      transform: scale(1);
+    }
+
+    .victory-icon {
+      width: 56px;
+      height: 56px;
+      border: 2px solid var(--lime);
+      border-radius: 50%;
+      color: var(--lime);
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 24px rgba(216, 243, 124, .3);
+      animation: victory-glow 2s infinite;
+    }
+
+    @keyframes victory-glow {
+      50% { box-shadow: 0 0 45px rgba(216, 243, 124, .6); }
+    }
+
+    .victory-card h2 {
+      font-size: 28px;
+      margin: 0 0 8px;
+      letter-spacing: -.03em;
+    }
+
+    .victory-card p {
+      font: 12px/1.6 var(--mono);
+      color: rgba(232, 229, 222, .7);
+      margin: 0 0 24px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 24px;
+      background: rgba(232, 229, 222, .04);
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid var(--line);
+    }
+
+    .stat-item span {
+      display: block;
+      font: 9px var(--mono);
+      color: rgba(232, 229, 222, .45);
+      text-transform: uppercase;
+    }
+
+    .stat-item strong {
+      font: 16px var(--mono);
+      color: var(--lime);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <p class="eyebrow">Studio puzzle / Stage 04</p>
+    <h1>Night Shift<span>Sudoku.</span></h1>
+    <p class="intro">
+      Fill in the 10 empty cells to complete the 9×9 grid.
+    </p>
+
+    <!-- Puzzle Layout -->
+    <div class="puzzle-layout">
+      <div class="board-wrap">
+        <div class="sudoku-board" id="sudoku-board" role="grid" aria-label="9x9 Sudoku grid"></div>
+
+        <!-- Touch / Click Numpad -->
+        <div class="numpad-wrap">
+          <div class="numpad">
+            <button class="num-btn" data-num="1" type="button">1</button>
+            <button class="num-btn" data-num="2" type="button">2</button>
+            <button class="num-btn" data-num="3" type="button">3</button>
+            <button class="num-btn" data-num="4" type="button">4</button>
+            <button class="num-btn" data-num="5" type="button">5</button>
+            <button class="num-btn" data-num="6" type="button">6</button>
+            <button class="num-btn" data-num="7" type="button">7</button>
+            <button class="num-btn" data-num="8" type="button">8</button>
+            <button class="num-btn" data-num="9" type="button">9</button>
+            <button class="num-btn clear-btn" data-num="clear" type="button" aria-label="Clear cell">⌫</button>
+          </div>
+        </div>
+
+        <div class="hud" style="display: flex; justify-content: space-between; width: 100%; margin-top: 12px; font: 11px var(--mono); color: rgba(232, 229, 222, .6);">
+          <span id="solved-count">Solved: 0 / 10 cells</span>
+          <span>Keyboard / Numpad / Arrow keys</span>
+        </div>
+
+        <div class="action-row" style="display: flex; gap: 10px; width: 100%; margin-top: 14px;">
+          <button class="btn" id="reset-board" type="button">Reset Puzzle</button>
+          <a class="btn" href="pingpong.html">← Ping Pong</a>
+          <a class="btn primary" href="index.html">Night Shift Studio ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Victory Celebration Modal -->
+  <div class="victory-overlay" id="victory-overlay">
+    <div class="victory-card">
+      <div class="victory-icon">✓</div>
+      <h2>Matrix Decrypted!</h2>
+      <p>You deduced all the numbers and solved the Sudoku puzzle.</p>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span>Cells Solved</span>
+          <strong>10 / 10</strong>
+        </div>
+        <div class="stat-item">
+          <span>Deduction Rating</span>
+          <strong>Grandmaster</strong>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn" id="modal-close" type="button">Review Grid</button>
+        <a class="btn primary" id="victory-continue" href="coin.html">Coin Flip Challenge ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Valid Sudoku Solution
+    const SOLUTION = [
+      [5, 3, 4, 6, 7, 8, 9, 1, 2],
+      [6, 7, 2, 1, 9, 5, 3, 4, 8],
+      [1, 9, 8, 3, 4, 2, 5, 6, 7],
+      [8, 5, 9, 7, 6, 1, 4, 2, 3],
+      [4, 2, 6, 8, 5, 3, 7, 9, 1],
+      [7, 1, 3, 9, 2, 4, 8, 5, 6],
+      [9, 6, 1, 5, 3, 7, 2, 8, 4],
+      [2, 8, 7, 4, 1, 9, 6, 3, 5],
+      [3, 4, 5, 2, 8, 6, 1, 7, 9]
+    ];
+
+    // The 10 Keystone steps to be solved in 10 moves
+    const KEYSTONES = [
+      { r: 2, c: 3, val: 3, label: "R3, C4", name: "Step 1" }, // Row 3, Col 4 (Box 2) = 3
+      { r: 2, c: 1, val: 9, label: "R3, C2", name: "Step 2" }, // Row 3, Col 2 (Box 1) = 9
+      { r: 0, c: 1, val: 3, label: "R1, C2", name: "Step 3" }, // Row 1, Col 2 (Box 1) = 3
+      { r: 0, c: 0, val: 5, label: "R1, C1", name: "Step 4" }, // Row 1, Col 1 (Box 1) = 5
+      { r: 0, c: 3, val: 6, label: "R1, C4", name: "Step 5" }, // Row 1, Col 4 (Box 2) = 6
+      { r: 2, c: 0, val: 1, label: "R3, C1", name: "Step 6" }, // Row 3, Col 1 (Box 1) = 1
+      { r: 0, c: 6, val: 9, label: "R1, C7", name: "Step 7" }, // Row 1, Col 7 (Box 3) = 9
+      { r: 2, c: 6, val: 5, label: "R3, C7", name: "Step 8" }, // Row 3, Col 7 (Box 3) = 5
+      { r: 6, c: 0, val: 9, label: "R7, C1", name: "Step 9" }, // Row 7, Col 1 (Box 7) = 9
+      { r: 4, c: 1, val: 2, label: "R5, C2", name: "Step 10" }  // Row 5, Col 2 (Box 4) = 2
+    ];
+
+    const keystoneMap = new Map();
+    KEYSTONES.forEach((k, idx) => {
+      keystoneMap.set(`${k.r},${k.c}`, { ...k, index: idx });
+    });
+
+    const userValues = new Map(); // key: "r,c" => number
+    let selectedCell = null; // { r, c }
+
+    const boardEl = document.querySelector('#sudoku-board');
+    const victoryOverlay = document.querySelector('#victory-overlay');
+    const modalClose = document.querySelector('#modal-close');
+    const resetBtn = document.querySelector('#reset-board');
+
+    // Audio synthesizer for subtle tactile feedback
+    const audioCtx = window.AudioContext ? new AudioContext() : null;
+    function playTone(freq, type = 'sine', duration = 0.12, gainVal = 0.08) {
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) { }
+    }
+
+    // Build the 9x9 grid DOM
+    function initBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.dataset.box = `${Math.floor(r / 3)},${Math.floor(c / 3)}`;
+
+          const key = `${r},${c}`;
+          if (keystoneMap.has(key)) {
+            cell.classList.add('keystone');
+            cell.tabIndex = 0;
+            cell.setAttribute('role', 'gridcell');
+            cell.setAttribute('aria-label', `Empty Cell at row ${r + 1}, column ${c + 1}`);
+            cell.textContent = userValues.get(key) || '';
+            cell.addEventListener('click', () => selectCell(r, c));
+            cell.addEventListener('focus', () => selectCell(r, c));
+          } else {
+            cell.textContent = SOLUTION[r][c];
+            cell.classList.add('fixed');
+            cell.setAttribute('aria-label', `Cell at row ${r + 1}, column ${c + 1} with value ${SOLUTION[r][c]}`);
+            cell.addEventListener('click', () => selectCell(r, c));
+          }
+
+          boardEl.appendChild(cell);
+        }
+      }
+      updateCounter();
+    }
+
+    function selectCell(r, c) {
+      selectedCell = { r, c };
+      playTone(320, 'sine', 0.06, 0.04);
+      updateHighlights();
+    }
+
+    function updateHighlights() {
+      const cells = boardEl.querySelectorAll('.cell');
+      if (!selectedCell) {
+        cells.forEach(el => el.classList.remove('selected', 'peer-highlight', 'same-digit-highlight'));
+        return;
+      }
+
+      const { r, c } = selectedCell;
+      const targetVal = keystoneMap.has(`${r},${c}`)
+        ? userValues.get(`${r},${c}`)
+        : SOLUTION[r][c];
+      const box = `${Math.floor(r / 3)},${Math.floor(c / 3)}`;
+
+      cells.forEach(cell => {
+        const cr = parseInt(cell.dataset.row, 10);
+        const cc = parseInt(cell.dataset.col, 10);
+        const cbox = cell.dataset.box;
+        const cVal = cell.textContent.trim();
+
+        cell.classList.remove('selected', 'peer-highlight', 'same-digit-highlight');
+
+        if (cr === r && cc === c) {
+          cell.classList.add('selected');
+        } else if (cr === r || cc === c || cbox === box) {
+          cell.classList.add('peer-highlight');
+        }
+
+        if (targetVal && cVal === String(targetVal)) {
+          cell.classList.add('same-digit-highlight');
+        }
+      });
+    }
+
+    function inputDigit(digit) {
+      if (!selectedCell) return;
+      const key = `${selectedCell.r},${selectedCell.c}`;
+      if (!keystoneMap.has(key)) return;
+
+      const keystoneInfo = keystoneMap.get(key);
+      const cellEl = boardEl.querySelector(`.cell[data-row="${selectedCell.r}"][data-col="${selectedCell.c}"]`);
+
+      if (digit === 'clear' || digit === 0) {
+        userValues.delete(key);
+        cellEl.textContent = '';
+        cellEl.classList.remove('step-solved', 'error');
+        updateCounter();
+        updateHighlights();
+        playTone(220, 'triangle', 0.1, 0.05);
+        return;
+      }
+
+      const val = parseInt(digit, 10);
+      if (val < 1 || val > 9) return;
+
+      userValues.set(key, val);
+      cellEl.textContent = val;
+
+      if (val === keystoneInfo.val) {
+        // Correct step!
+        cellEl.classList.add('step-solved');
+        cellEl.classList.remove('error');
+        playTone(587.33, 'sine', 0.12, 0.08); // D5
+        setTimeout(() => playTone(880, 'sine', 0.25, 0.1), 80); // A5
+      } else {
+        // Wrong entry
+        cellEl.classList.remove('step-solved');
+        cellEl.classList.add('error');
+        playTone(180, 'sawtooth', 0.25, 0.08);
+        setTimeout(() => cellEl.classList.remove('error'), 450);
+      }
+
+      updateCounter();
+      updateHighlights();
+      checkVictory();
+    }
+
+    function updateCounter() {
+      const solved = KEYSTONES.filter(k => userValues.get(`${k.r},${k.c}`) === k.val).length;
+      const countEl = document.querySelector('#solved-count');
+      if (countEl) countEl.textContent = `Solved: ${solved} / 10 cells`;
+    }
+
+    let victoryTimer = null;
+    function checkVictory() {
+      const allSolved = KEYSTONES.every(k => userValues.get(`${k.r},${k.c}`) === k.val);
+      if (allSolved) {
+        setTimeout(() => {
+          victoryOverlay.classList.add('show');
+          playTone(523.25, 'sine', 0.15, 0.1);
+          setTimeout(() => playTone(659.25, 'sine', 0.15, 0.1), 120);
+          setTimeout(() => playTone(783.99, 'sine', 0.15, 0.1), 240);
+          setTimeout(() => playTone(1046.50, 'sine', 0.45, 0.15), 360);
+
+          const continueBtn = document.querySelector('#victory-continue');
+          let seconds = 3;
+          if (continueBtn) {
+            continueBtn.textContent = `Coin Flip Challenge (${seconds}s) ↗`;
+          }
+          victoryTimer = setInterval(() => {
+            seconds--;
+            if (continueBtn && seconds > 0) {
+              continueBtn.textContent = `Coin Flip Challenge (${seconds}s) ↗`;
+            } else if (seconds <= 0) {
+              clearInterval(victoryTimer);
+              window.location.href = 'coin.html';
+            }
+          }, 1000);
+        }, 500);
+      }
+    }
+
+    // Keyboard support
+    window.addEventListener('keydown', (e) => {
+      if (e.key >= '1' && e.key <= '9') {
+        inputDigit(e.key);
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        inputDigit('clear');
+      } else if (e.key === 'ArrowUp' && selectedCell) {
+        selectCell(Math.max(0, selectedCell.r - 1), selectedCell.c);
+      } else if (e.key === 'ArrowDown' && selectedCell) {
+        selectCell(Math.min(8, selectedCell.r + 1), selectedCell.c);
+      } else if (e.key === 'ArrowLeft' && selectedCell) {
+        selectCell(selectedCell.r, Math.max(0, selectedCell.c - 1));
+      } else if (e.key === 'ArrowRight' && selectedCell) {
+        selectCell(selectedCell.r, Math.min(8, selectedCell.c + 1));
+      }
+    });
+
+    // On-screen Numpad buttons
+    document.querySelectorAll('.num-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        inputDigit(btn.dataset.num);
+      });
+    });
+
+    // Reset button
+    resetBtn.addEventListener('click', () => {
+      userValues.clear();
+      if (victoryTimer) clearInterval(victoryTimer);
+      initBoard();
+      updateCounter();
+      playTone(280, 'sine', 0.15, 0.05);
+    });
+
+    modalClose.addEventListener('click', () => {
+      victoryOverlay.classList.remove('show');
+      if (victoryTimer) clearInterval(victoryTimer);
+      const continueBtn = document.querySelector('#victory-continue');
+      if (continueBtn) continueBtn.textContent = 'Coin Flip Challenge ↗';
+    });
+
+    // Initialize board on load and auto-select first cell
+    initBoard();
+    updateCounter();
+    selectCell(KEYSTONES[0].r, KEYSTONES[0].c);
+  </script>
+</body>
+
+</html>

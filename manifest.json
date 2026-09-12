@@ -1,0 +1,18 @@
+{
+  "name": "Night Shift",
+  "short_name": "NightShift",
+  "description": "A small identity lab for the hours when the ordinary gets interesting.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#10151c",
+  "theme_color": "#10151c",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

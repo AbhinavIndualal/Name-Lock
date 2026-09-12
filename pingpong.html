@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#10151c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Night Shift">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Ping Pong - Night Shift</title>
+  <style>
+    :root {
+      --ink: #10151c;
+      --paper: #e8e5de;
+      --lime: #d8f37c;
+      --coral: #ff715b;
+      --blue: #87a9ff;
+      --mono: 'DM Mono', monospace;
+      --display: 'Space Grotesk', sans-serif
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--display);
+      display: grid;
+      place-items: center;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      overflow-x: hidden;
+    }
+
+    .wrap {
+      width: min(700px, calc(100% - 24px));
+      text-align: center;
+      padding: 12px 0;
+    }
+
+    .eyebrow {
+      color: var(--lime);
+      font: 10px var(--mono);
+      letter-spacing: .16em;
+      text-transform: uppercase
+    }
+
+    .wrap h1 {
+      font-size: clamp(38px, 8vw, 82px);
+      line-height: .88;
+      margin: 8px 0
+    }
+
+    .wrap h1 span {
+      color: var(--lime)
+    }
+
+    .intro {
+      font: 11px/1.6 var(--mono);
+      color: rgba(232, 229, 222, .6);
+      margin: 10px auto 14px
+    }
+
+    .score {
+      font: 13px var(--mono);
+      color: var(--lime);
+      margin: 8px
+    }
+
+    .court {
+      position: relative;
+      width: 100%;
+      height: min(52vh, 420px);
+      min-height: 260px;
+      border: 2px solid rgba(232, 229, 222, .35);
+      background: repeating-linear-gradient(90deg, rgba(135, 169, 255, .08) 0 2px, transparent 2px 64px), linear-gradient(90deg, rgba(216, 243, 124, .06), rgba(135, 169, 255, .08));
+      overflow: hidden;
+      box-shadow: 0 0 55px rgba(135, 169, 255, .12);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: ns-resize;
+    }
+
+    .court::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      border-left: 2px dashed rgba(232, 229, 222, .45)
+    }
+
+    .court::after {
+      content: "";
+      position: absolute;
+      inset: 8%;
+      border: 1px solid rgba(232, 229, 222, .18);
+      pointer-events: none
+    }
+
+    .paddle {
+      position: absolute;
+      width: 18px;
+      height: 92px;
+      border-radius: 12px;
+      background: var(--lime);
+      box-shadow: 0 0 20px rgba(216, 243, 124, .35);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .player {
+      left: 14px;
+      height: 112px
+    }
+
+    .opponent {
+      right: 14px;
+      height: 70px;
+      background: var(--coral);
+      box-shadow: 0 0 20px rgba(255, 113, 91, .35)
+    }
+
+    .ball {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--paper);
+      box-shadow: 0 0 18px var(--paper);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .status {
+      min-height: 18px;
+      margin: 10px 0;
+      color: var(--coral);
+      font: 10px var(--mono)
+    }
+
+    .status.success {
+      color: var(--lime)
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+
+    button,
+    a {
+      font: 10px var(--mono);
+      padding: 11px 16px;
+      border: 1px solid var(--lime);
+      background: transparent;
+      color: var(--lime);
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-block;
+      transition: all .2s;
+      touch-action: manipulation;
+    }
+
+    button:hover,
+    a:hover {
+      background: var(--lime);
+      color: var(--ink)
+    }
+
+    @media(max-width:600px) {
+      .court {
+        height: 48vh;
+        min-height: 250px
+      }
+
+      .paddle {
+        width: 14px;
+      }
+
+      .player {
+        height: 86px
+      }
+
+      .opponent {
+        height: 56px
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <p class="eyebrow">Special feature / 03</p>
+    <h1>Neon<span>ping pong.</span></h1>
+    <p class="intro">Drag your finger or mouse anywhere on the court to slide the paddle. First to 1 point wins.</p>
+    <p class="score" id="score">Player 0 — Opponent 0</p>
+    <div class="court" id="court" aria-label="Ping Pong Court">
+      <div class="paddle player" id="player"></div>
+      <div class="paddle opponent" id="opponent"></div>
+      <div class="ball" id="ball"></div>
+    </div>
+    <p class="status" id="status" aria-live="polite">First to 1 point wins. Stay sharp.</p>
+    <div class="btn-row">
+      <button id="restart" type="button">Restart match</button>
+      <a id="sudoku-link" href="sudoku.html"
+        style="display:none;background:var(--lime);color:var(--ink);font-weight:600">Proceed to Sudoku ↗</a>
+      <a href="index.html">Startup ↗</a>
+    </div>
+  </main>
+  <script>
+    const court = document.querySelector('#court'),
+      player = document.querySelector('#player'),
+      opponent = document.querySelector('#opponent'),
+      ball = document.querySelector('#ball'),
+      scoreLabel = document.querySelector('#score'),
+      status = document.querySelector('#status'),
+      restart = document.querySelector('#restart'),
+      sudokuLink = document.querySelector('#sudoku-link');
+
+    let playerY = 0, opponentY = 0, ballX = 0, ballY = 0, velocityX = 0, velocityY = 0,
+      playerScore = 0, opponentScore = 0, running = true, frame;
+    let opponentWillMiss = false;
+
+    const getPlayerHeight = () => player.clientHeight || 92;
+    const getOpponentHeight = () => opponent.clientHeight || 70;
+
+    const resetBall = (direction = 1) => {
+      ballX = court.clientWidth / 2;
+      ballY = court.clientHeight / 2;
+      velocityX = direction * 5;
+      velocityY = (Math.random() > 0.5 ? 1 : -1) * 3.8;
+      opponentWillMiss = (direction > 0) && (Math.random() < 0.10);
+    };
+
+    const draw = () => {
+      player.style.top = `${playerY}px`;
+      opponent.style.top = `${opponentY}px`;
+      ball.style.left = `${ballX - 7}px`;
+      ball.style.top = `${ballY - 7}px`;
+    };
+
+    const scorePoint = (playerWon) => {
+      if (playerWon) playerScore += 1;
+      else opponentScore += 1;
+      scoreLabel.textContent = `Player ${playerScore} — Opponent ${opponentScore}`;
+
+      if (playerScore >= 1) {
+        running = false;
+        status.textContent = 'Opponent defeated! Decrypting Sudoku challenge...';
+        status.classList.add('success');
+        if (sudokuLink) sudokuLink.style.display = 'inline-block';
+        setTimeout(() => { window.location.href = 'sudoku.html'; }, 1200);
+        return;
+      }
+
+      if (opponentScore >= 1) {
+        running = false;
+        status.textContent = 'The opponent defeated you. Try the match again.';
+        return;
+      }
+
+      resetBall(playerWon ? 1 : -1);
+    };
+
+    const loop = () => {
+      if (!running) return;
+      const width = court.clientWidth, height = court.clientHeight;
+      const pHeight = getPlayerHeight(), oHeight = getOpponentHeight();
+
+      ballX += velocityX;
+      ballY += velocityY;
+
+      // Opponent AI tracking
+      if (opponentWillMiss && velocityX > 0) {
+        const missTarget = (ballY > height / 2) ? 0 : (height - oHeight);
+        opponentY += (missTarget - opponentY) * 0.04;
+      } else {
+        opponentY += (ballY - (opponentY + oHeight / 2)) * 0.11;
+      }
+      opponentY = Math.max(0, Math.min(height - oHeight, opponentY));
+
+      // Wall bounce
+      if (ballY < 7 || ballY > height - 7) {
+        velocityY *= -1;
+        ballY = Math.max(7, Math.min(height - 7, ballY));
+      }
+
+      // Player paddle hit
+      if (velocityX < 0 && ballX < 32 && ballX > 14 && ballY > playerY - 14 && ballY < playerY + pHeight + 14) {
+        ballX = 32;
+        const speedMult = 1.06;
+        velocityX = Math.min(22, Math.abs(velocityX) * speedMult);
+        velocityY = Math.min(15, Math.max(-15, (velocityY + (ballY - (playerY + pHeight / 2)) * 0.05) * speedMult));
+        opponentWillMiss = Math.random() < 0.10;
+      }
+
+      // Opponent paddle hit
+      if (!opponentWillMiss && velocityX > 0 && ballX > width - 34 && ballX < width - 16 && ballY > opponentY - 6 && ballY < opponentY + oHeight + 6) {
+        ballX = width - 34;
+        const speedMult = 1.06;
+        velocityX = -Math.min(22, Math.abs(velocityX) * speedMult);
+        velocityY = Math.min(15, Math.max(-15, (velocityY + (ballY - (opponentY + oHeight / 2)) * 0.05) * speedMult));
+      }
+
+      if (ballX < 0) scorePoint(false);
+      if (ballX > width) scorePoint(true);
+
+      draw();
+      frame = requestAnimationFrame(loop);
+    };
+
+    const start = () => {
+      playerY = (court.clientHeight - getPlayerHeight()) / 2;
+      opponentY = (court.clientHeight - getOpponentHeight()) / 2;
+      playerScore = 0;
+      opponentScore = 0;
+      running = true;
+      status.textContent = 'Defeat the opponent by reaching 1 point.';
+      status.classList.remove('success');
+      if (sudokuLink) sudokuLink.style.display = 'none';
+      resetBall(1);
+      cancelAnimationFrame(frame);
+      loop();
+    };
+
+    const updatePaddleFromY = (clientY) => {
+      if (!running) return;
+      const bounds = court.getBoundingClientRect();
+      const pHeight = getPlayerHeight();
+      playerY = Math.max(0, Math.min(court.clientHeight - pHeight, clientY - bounds.top - pHeight / 2));
+      draw();
+    };
+
+    // Pointer events (works seamlessly on desktop mouse, Android touch, iPhone touch, pen)
+    court.addEventListener('pointerdown', event => {
+      court.setPointerCapture?.(event.pointerId);
+      updatePaddleFromY(event.clientY);
+    });
+
+    court.addEventListener('pointermove', event => {
+      updatePaddleFromY(event.clientY);
+    });
+
+    // Touch events fallback to guarantee zero scroll interference on mobile Safari/Chrome
+    court.addEventListener('touchmove', event => {
+      if (event.touches && event.touches[0]) {
+        event.preventDefault();
+        updatePaddleFromY(event.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    // Keyboard controls for Windows / Mac
+    window.addEventListener('keydown', event => {
+      if (!running) return;
+      const pHeight = getPlayerHeight();
+      const step = 32;
+      if (['ArrowUp', 'KeyW'].includes(event.code)) {
+        event.preventDefault();
+        playerY = Math.max(0, playerY - step);
+        draw();
+      } else if (['ArrowDown', 'KeyS'].includes(event.code)) {
+        event.preventDefault();
+        playerY = Math.min(court.clientHeight - pHeight, playerY + step);
+        draw();
+      }
+    });
+
+    restart.addEventListener('click', start);
+
+    window.addEventListener('resize', () => {
+      playerY = Math.min(playerY, Math.max(0, court.clientHeight - getPlayerHeight()));
+      opponentY = Math.min(opponentY, Math.max(0, court.clientHeight - getOpponentHeight()));
+      draw();
+    });
+
+    start();
+  </script>
+</body>
+
+</html>

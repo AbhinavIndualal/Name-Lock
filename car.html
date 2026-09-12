@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#10151c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Night Shift">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Night Drive - Night Shift</title>
+  <style>
+    :root {
+      --ink: #10151c;
+      --paper: #e8e5de;
+      --lime: #d8f37c;
+      --coral: #ff715b;
+      --mono: 'DM Mono', monospace;
+      --display: 'Space Grotesk', sans-serif;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--display);
+      display: grid;
+      place-items: center;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      overflow-x: hidden;
+    }
+    .wrap {
+      text-align: center;
+      width: min(430px, calc(100% - 24px));
+      padding: 12px 0;
+    }
+    .eyebrow {
+      color: var(--lime);
+      font: 10px var(--mono);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      margin: 4px 0;
+    }
+    .wrap h1 {
+      font-size: clamp(34px, 8vw, 70px);
+      line-height: .9;
+      margin: 8px 0;
+    }
+    .wrap h1 span {
+      color: var(--lime);
+    }
+    .score {
+      font: 12px var(--mono);
+      margin: 8px 0 12px;
+      color: rgba(232, 229, 222, .75);
+    }
+    .road {
+      height: min(420px, 46vh);
+      min-height: 280px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(232, 229, 222, .2);
+      background: linear-gradient(90deg, #252b35 0 8%, #1a2027 8% 92%, #252b35 92%);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .road::before, .road::after {
+      content: "";
+      position: absolute;
+      top: -20%;
+      height: 140%;
+      width: 5px;
+      background: repeating-linear-gradient(to bottom, var(--paper) 0 34px, transparent 34px 76px);
+      opacity: .35;
+      animation: road 1.2s linear infinite;
+    }
+    .road::before { left: 33%; }
+    .road::after { right: 33%; }
+    .car {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      width: 42px;
+      height: 72px;
+      border-radius: 12px 12px 7px 7px;
+      background: var(--lime);
+      transform: translateX(-50%);
+      box-shadow: 0 0 20px rgba(216, 243, 124, .4);
+      z-index: 2;
+      transition: left .12s, bottom .12s;
+      pointer-events: none;
+    }
+    .car::before {
+      content: "";
+      position: absolute;
+      left: 7px;
+      right: 7px;
+      top: 12px;
+      height: 24px;
+      border-radius: 7px;
+      background: #31445b;
+    }
+    .car.crashed {
+      filter: grayscale(.7) brightness(.8);
+      box-shadow: 0 0 20px rgba(255, 113, 91, .5);
+      animation: car-crash .3s ease-in-out;
+    }
+    @keyframes car-crash {
+      0%, 100% { transform: translateX(-50%) rotate(0deg); }
+      25% { transform: translateX(-50%) rotate(-12deg); }
+      75% { transform: translateX(-50%) rotate(12deg); }
+    }
+    .obstacle {
+      position: absolute;
+      top: -90px;
+      width: 42px;
+      height: 70px;
+      border-radius: 10px;
+      background: var(--coral);
+      box-shadow: 0 0 14px rgba(255, 113, 91, .3);
+      animation: fall 1.15s linear forwards;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font: 10px var(--mono);
+      color: rgba(232, 229, 222, .6);
+    }
+    .touch-controls {
+      display: grid;
+      grid-template-columns: repeat(3, 56px);
+      grid-template-rows: repeat(2, 42px);
+      gap: 6px;
+      justify-content: center;
+      margin: 10px auto 4px;
+      touch-action: manipulation;
+    }
+    .touch-btn {
+      background: rgba(216, 243, 124, .08);
+      border: 1px solid rgba(216, 243, 124, .4);
+      color: var(--lime);
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      transition: background .12s, transform .1s, border-color .12s;
+    }
+    .touch-btn:active {
+      background: var(--lime);
+      color: var(--ink);
+      border-color: var(--lime);
+      transform: scale(0.93);
+    }
+    .touch-btn-up { grid-column: 2; grid-row: 1; }
+    .touch-btn-left { grid-column: 1; grid-row: 2; }
+    .touch-btn-down { grid-column: 2; grid-row: 2; }
+    .touch-btn-right { grid-column: 3; grid-row: 2; }
+
+    .message {
+      min-height: 20px;
+      font: 10px var(--mono);
+      color: var(--coral);
+      margin: 6px 0;
+    }
+    .message.success {
+      color: var(--lime);
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 6px;
+    }
+    button.action-btn, a.action-link {
+      font: 10px var(--mono);
+      padding: 10px 14px;
+      border: 1px solid var(--lime);
+      background: transparent;
+      color: var(--lime);
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-block;
+      transition: all .2s;
+    }
+    button.action-btn:hover, a.action-link:hover {
+      background: rgba(216, 243, 124, .1);
+      box-shadow: 0 0 14px rgba(216, 243, 124, .2);
+    }
+    @keyframes road { to { transform: translateY(76px); } }
+    @keyframes fall { to { transform: translateY(560px); } }
+    @media (prefers-reduced-motion: reduce) {
+      .road::before, .road::after { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <p class="eyebrow">Special feature / 02</p>
+    <h1>Night<span>drive.</span></h1>
+    <p class="score">Reach 100 points without hitting anything.</p>
+    <div class="road" id="road" aria-label="Highway"><div class="car" id="car"></div></div>
+    <div class="hud">
+      <span id="points">Points: 0 / 100</span>
+      <span>Controls: Arrow keys / Touch</span>
+    </div>
+
+    <!-- On-screen touch buttons for iPhone, Android, and Touch PCs -->
+    <div class="touch-controls" aria-label="On-screen directional controls">
+      <button type="button" id="btn-up" class="touch-btn touch-btn-up" aria-label="Accelerate">▲</button>
+      <button type="button" id="btn-left" class="touch-btn touch-btn-left" aria-label="Steer left">◀</button>
+      <button type="button" id="btn-down" class="touch-btn touch-btn-down" aria-label="Brake">▼</button>
+      <button type="button" id="btn-right" class="touch-btn touch-btn-right" aria-label="Steer right">▶</button>
+    </div>
+
+    <p class="message" id="message" aria-live="polite">Tap road lanes or use controls to dodge oncoming traffic.</p>
+    <div class="btn-row">
+      <button id="restart" class="action-btn" type="button">Restart</button>
+      <a href="index.html" class="action-link">Startup ↗</a>
+    </div>
+  </main>
+  <script>
+    const road = document.querySelector('#road');
+    const car = document.querySelector('#car');
+    const pointsLabel = document.querySelector('#points');
+    const message = document.querySelector('#message');
+    const restart = document.querySelector('#restart');
+
+    const laneX = [20, 50, 80];
+    let lane = 1;
+    let vertical = 24;
+    let points = 0;
+    let running = true;
+    let spawnTimer = null;
+    let restartTimer = null;
+    let countdownInterval = null;
+
+    const updateCar = () => {
+      car.style.left = `${laneX[lane]}%`;
+      car.style.bottom = `${vertical}px`;
+    };
+
+    const collision = (first, second) => {
+      const a = first.getBoundingClientRect();
+      const b = second.getBoundingClientRect();
+      return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    };
+
+    const scheduleSpawn = () => {
+      if (running) {
+        spawnTimer = setTimeout(spawn, Math.max(110, 480 - points * 3));
+      }
+    };
+
+    const triggerGameOver = () => {
+      if (!running) return;
+      running = false;
+      clearTimeout(spawnTimer);
+      clearTimeout(restartTimer);
+      clearInterval(countdownInterval);
+
+      car.classList.add('crashed');
+
+      let secondsLeft = 3;
+      message.textContent = `GAME OVER — You crashed. Restarting in ${secondsLeft}s...`;
+
+      countdownInterval = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft > 0) {
+          message.textContent = `GAME OVER — You crashed. Restarting in ${secondsLeft}s...`;
+        } else {
+          clearInterval(countdownInterval);
+        }
+      }, 1000);
+
+      restartTimer = setTimeout(() => {
+        clearInterval(countdownInterval);
+        start();
+      }, 3000);
+    };
+
+    const spawn = () => {
+      if (!running) return;
+      const obstacle = document.createElement('div');
+      obstacle.className = 'obstacle';
+      obstacle.style.left = `calc(${laneX[Math.floor(Math.random() * 3)]}% - 21px)`;
+      obstacle.style.animationDuration = `${Math.max(0.38, 0.9 - points * 0.003)}s`;
+      road.append(obstacle);
+      scheduleSpawn();
+
+      const timer = setInterval(() => {
+        if (!running) {
+          clearInterval(timer);
+          return;
+        }
+        if (collision(car, obstacle)) {
+          clearInterval(timer);
+          obstacle.remove();
+          triggerGameOver();
+          return;
+        }
+        if (obstacle.getBoundingClientRect().top > road.getBoundingClientRect().bottom) {
+          clearInterval(timer);
+          obstacle.remove();
+          if (running) {
+            points += 4;
+            pointsLabel.textContent = `Points: ${points} / 100`;
+            if (points >= 100) {
+              running = false;
+              clearTimeout(spawnTimer);
+              clearTimeout(restartTimer);
+              clearInterval(countdownInterval);
+              message.textContent = '100 points! Moving to ping pong...';
+              message.classList.add('success');
+              setTimeout(() => {
+                window.location.href = 'pingpong.html';
+              }, 600);
+            }
+          }
+        }
+      }, 40);
+    };
+
+    const start = () => {
+      clearTimeout(restartTimer);
+      clearInterval(countdownInterval);
+      clearTimeout(spawnTimer);
+
+      road.querySelectorAll('.obstacle').forEach(obstacle => obstacle.remove());
+      car.classList.remove('crashed');
+
+      lane = 1;
+      vertical = 24;
+      points = 0;
+      running = true;
+
+      message.textContent = 'Stay sharp. Incoming cars get faster.';
+      message.classList.remove('success');
+      pointsLabel.textContent = 'Points: 0 / 100';
+
+      updateCar();
+      scheduleSpawn();
+    };
+
+    const steerLeft = () => { if (!running) return; lane = Math.max(0, lane - 1); updateCar(); };
+    const steerRight = () => { if (!running) return; lane = Math.min(2, lane + 1); updateCar(); };
+    const moveUp = () => { if (!running) return; vertical = Math.min(320, vertical + 24); updateCar(); };
+    const moveDown = () => { if (!running) return; vertical = Math.max(24, vertical - 24); updateCar(); };
+
+    // Keyboard support (Windows, Mac)
+    window.addEventListener('keydown', event => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        event.preventDefault();
+      }
+      if (!running) return;
+
+      if (event.key === 'ArrowLeft') steerLeft();
+      if (event.key === 'ArrowRight') steerRight();
+      if (event.key === 'ArrowUp') moveUp();
+      if (event.key === 'ArrowDown') moveDown();
+    });
+
+    // Touch button support (iPhone, Android)
+    const bindTouchBtn = (id, action) => {
+      const btn = document.querySelector(id);
+      if (!btn) return;
+      btn.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        action();
+      });
+    };
+
+    bindTouchBtn('#btn-left', steerLeft);
+    bindTouchBtn('#btn-right', steerRight);
+    bindTouchBtn('#btn-up', moveUp);
+    bindTouchBtn('#btn-down', moveDown);
+
+    // Direct touch on road lanes (tapping left/middle/right lane directly moves car)
+    road.addEventListener('pointerdown', e => {
+      if (!running) return;
+      const rect = road.getBoundingClientRect();
+      const clickX = (e.clientX - rect.left) / rect.width;
+      if (clickX < 0.35) steerLeft();
+      else if (clickX > 0.65) steerRight();
+      else lane = 1;
+      updateCar();
+    });
+
+    restart.addEventListener('click', start);
+    start();
+  </script>
+</body>
+</html>
